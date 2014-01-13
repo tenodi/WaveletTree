@@ -1,0 +1,14 @@
+
+public class Program {
+
+	public static void main(String args[])
+	{
+		System.out.println("Total memory taken by JVM before starting is " + getMb(Runtime.getRuntime().totalMemory()) + "MB\n");
+		new WaveletTreeConstructor("fastaFile.txt");
+	}
+	
+	public static long getMb(long bytes){
+		return bytes / (1024 * 1024);
+	}
+	
+}

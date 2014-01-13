@@ -1,0 +1,550 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+
+public class WaveletTreeConstructor {
+
+	// for building and identifying
+	private String sequence;
+	private String commentLines;
+	
+	// for tree
+	private ArrayList<Character> alphabet;
+	private Node root;
+	
+	// for time testing
+	private long startTime;
+	private long endTime;
+	
+	// parameters of functions 
+	private char character;
+	private int position;
+	private int occurrence;
+	
+	// constants
+	private final int ARGUMENT_LENGTH = 6; 
+	
+	// invoking main methods (rank, select & member) and methods for reading fasta format and determing alphabet
+	public WaveletTreeConstructor(String args[]) throws Exception
+	{
+		if (args.length == ARGUMENT_LENGTH)
+		{
+			alphabet = new ArrayList<Character>();
+			root = new Node();
+			
+			startTime = System.nanoTime();
+			readFastaFile(args[0]); // first argument - file name
+			endTime = System.nanoTime();
+			System.out.println("Identity : " + commentLines);
+			System.out.println("Fasta file has " + sequence.length() + " characters");
+			System.out.println("Reading fasta file took: " + getMiliseconds(endTime, startTime) + "ms");
+			
+			startTime = System.nanoTime();
+			determineAlphabet();
+			endTime = System.nanoTime();
+			System.out.println("Determination of alphabet took: " + getMiliseconds(endTime, startTime) + "ms");
+			
+			startTime = System.nanoTime();
+			generateWaveletTree(alphabet, sequence, root);
+			endTime = System.nanoTime();
+			System.out.println("Generating tree took: " + getMiliseconds(endTime, startTime) + "ms");
+	
+			
+			
+			System.out.println("\nTesting functions on tree:\n");
+			
+			
+			
+
+			// initialisation for RANK
+			try
+			{
+				character = Character.toUpperCase(args[1].charAt(0)); // second argument - character for rank
+				position = Integer.parseInt(args[2]); // third argument - position for rank (position = index + 1)
+			}
+			catch (Exception e)
+			{
+				throw new Exception ("Arguments are not correctly set for function rank");
+			}
+				
+			System.out.println("\nRank:");
+			startTime = System.nanoTime();
+			System.out.println("Number of occurrences of character " + character + " till position " + position +
+					" is " + rank(root, position-1, character, alphabet));
+			endTime = System.nanoTime();
+		
+			System.out.println("Function RANK took: " + getMiliseconds(endTime, startTime) + "ms");
+		
+				
+			
+			
+			// initialisation for SELECT
+			try
+			{
+				occurrence = Integer.parseInt(args[3]); // forth argument - occurence of character for select
+				character = Character.toUpperCase(args[4].charAt(0)); // fifth argument - character for select
+			}
+			catch (Exception e)
+			{
+				throw new Exception ("Arguments are not correctly set for function select");
+			}
+				
+			System.out.println("\nSelect:");
+			startTime = System.nanoTime();
+			System.out.println("Index of " + occurrence + ". occurrence of character " +
+					character + " is " + (select(occurrence, character) - 1));
+			endTime = System.nanoTime();
+		
+			System.out.println("Function SELECT took: " + getMiliseconds(endTime, startTime) + "ms");
+				
+				
+			
+			
+			// initialisation for MEMBER
+			try
+			{
+			position = Integer.parseInt(args[5]); // sixth argument - position for member
+			}
+			catch (Exception e)
+			{
+				throw new Exception ("Arguments are not correctly set for function member");
+			}
+			
+			System.out.println("\nMember:");
+			startTime = System.nanoTime();
+			
+			System.out.println("Character at position " + position + " is " + member(position -1));
+			endTime = System.nanoTime();
+			
+			System.out.println("Function MEMBER took: " + getMiliseconds(endTime, startTime) +  "ms");
+			
+				
+			System.out.println("\n\n");
+			System.out.println("Total memory used by JVM is " + Program.getMb(Runtime.getRuntime().totalMemory()) + "MB");
+			System.out.println("JVM has still " + Program.getMb(Runtime.getRuntime().freeMemory()) + "MB");
+			
+		}
+		else
+		{
+			throw new Exception("Number of arguments is not correct!");
+		}
+		
+	}
+	
+	
+	// constructing functions:
+	
+	// reads fasta file splitting comments from data
+	private void readFastaFile(String fastaFilePath) throws Exception
+	{
+		try 
+		{
+			BufferedReader br = new BufferedReader(new FileReader(fastaFilePath));
+	        StringBuilder sb = new StringBuilder();
+	        StringBuilder comments = new StringBuilder();
+	        String line = br.readLine();
+
+	        while (line != null) {
+	        	if (!(line.startsWith(">") || line.startsWith(";"))) // ignoring comments and first line
+	        	{
+		            sb.append(line);
+	        	}
+	        	else
+	        	{
+	        		comments.append(line.substring(1) + " | ");
+	        	}
+	            line = br.readLine();
+	        	
+	        }
+	        sequence = sb.toString();
+	        commentLines = comments.toString();
+	        
+	        br.close();
+		}
+		catch (Exception e)
+		{
+			throw new Exception("Something went wrong while reading the fasta file!");
+		}
+		
+	    
+	}
+	
+	
+	// determines alphabet from characters contained in fasta format file
+	public void determineAlphabet() throws Exception
+	{
+		if (sequence.length() != 0)
+		{
+			for (char c : sequence.toCharArray())
+			{
+				if (!alphabet.contains(Character.toUpperCase(c)))
+				{
+					alphabet.add(Character.toUpperCase(c));
+				}
+			}
+			
+			Collections.sort(alphabet);
+		}
+		else
+		{
+			throw new Exception("Sequence's length can't be 0!");
+		}
+		
+	}
+	
+	// generating Wavelet tree from fasta format
+	public void generateWaveletTree(List<Character> currentAlphabet, String currentLabel, Node currentNode)
+	{
+		if (currentAlphabet.size() > 2)
+		{
+			StringBuilder bitmapBuilder = new StringBuilder();
+			StringBuilder leftLabel = new StringBuilder();
+			StringBuilder rightLabel = new StringBuilder();
+			int middle = (currentAlphabet.size() + 1) / 2; // in case of odd number, left size will be greater by 1
+			
+			for (char c : currentLabel.toCharArray())
+			{
+				if (getIndex(Character.toUpperCase(c), currentAlphabet) < middle) // because of index, here doens't need to be less OR EQUAL
+				{
+					bitmapBuilder.append("0");
+					leftLabel.append(Character.toUpperCase(c));
+				}
+				else
+				{
+					bitmapBuilder.append("1");
+					rightLabel.append(Character.toUpperCase(c));
+				}
+			}
+			
+			
+			currentNode.setBitmap(bitmapBuilder.toString());
+			
+			// size of alphabet is certainly greater than 2, so left child of current node will exist for sure,
+			// because already for 3, we'll have alphabet of 2 in left child.
+			// right child will exist only if alphabet is greater than 3, and only then we'll set that object
+			// and call recursion
+			
+			
+			// left side
+			currentNode.setLeftChild(new Node());
+			currentNode.getLeftChild().setParent(currentNode);
+			generateWaveletTree(currentAlphabet.subList(0, middle), leftLabel.toString(), currentNode.getLeftChild());
+			
+			// right side
+			if (currentAlphabet.size() > 3)
+			{
+				currentNode.setRightChild(new Node());
+				currentNode.getRightChild().setParent(currentNode);
+				generateWaveletTree(currentAlphabet.subList(middle, currentAlphabet.size()), 
+						rightLabel.toString(), currentNode.getRightChild());
+			}
+			
+					
+		}
+		else
+		{
+			// we still need to set the bitmap of that node, if the alphabet is 2!
+			if (currentAlphabet.size() == 2)
+			{
+				StringBuilder bitmapBuilder = new StringBuilder();
+				
+				for (char c : currentLabel.toCharArray())
+				{
+					if (getIndex(Character.toUpperCase(c), currentAlphabet) + 1 == 1) // we're hardcoding breakpoint
+					{
+						bitmapBuilder.append("0");
+					}
+					else
+					{
+						bitmapBuilder.append("1");
+					}
+				}
+				
+				currentNode.setBitmap(bitmapBuilder.toString());
+			}
+			
+			return;
+		}
+		
+	}
+	
+
+	
+	
+	// functions on tree: rank, select & member:
+	
+	// returns number of occurrences till some position of one character
+	public int rank(Node currentNode, int index, char character, List<Character> currentAlphabet){
+		
+		if (!currentAlphabet.contains(character)){
+			return 0;			
+		}
+		
+		int middle = (currentAlphabet.size() + 1) / 2;
+		int newIndex;
+		List<Character> currentAlphabetSliced = new ArrayList<Character>();
+		
+		if (getIndex(character, currentAlphabet) < middle) // if character is represented by 0
+		{
+			newIndex = index - rank1(currentNode.getBitmap(), index);
+			currentNode = currentNode.getLeftChild();
+			currentAlphabetSliced = currentAlphabet.subList(0, middle);
+		}
+		else
+		{
+			newIndex = rank1(currentNode.getBitmap(), index) - 1;
+			currentNode = currentNode.getRightChild();
+			currentAlphabetSliced = currentAlphabet.subList(middle, currentAlphabet.size());
+		}
+		
+		if (currentNode != null)
+		{
+			return rank(currentNode, newIndex, character, currentAlphabetSliced);
+		}
+		else
+		{
+			return newIndex + 1;
+		}
+	}
+	
+	
+	// returns position of nth occurrence of character
+	public int select (int nthOccurrence, char character)
+	{
+		// finding leaf for character
+		Interval alphabeticInterval = new Interval(0, alphabet.size() - 1);
+		Node currentNode = root;
+		int indexOfCharInAlph = getIndex(character, alphabet);
+		boolean characterRepresentedWithZero = true;
+		
+		while (alphabeticInterval.isGreaterThanTwo()) 
+		{
+			if (alphabeticInterval.getSize() == 3)
+			{
+				if (alphabeticInterval.getRightIndex() == indexOfCharInAlph) // not changing currentNode here! 
+																// e.g. this case will happen when alphabet will ABCDE
+																// then the node representing C will be consisting of ABC
+				{
+					characterRepresentedWithZero = false;
+					break;
+				}
+			}
+			
+			if (indexOfCharInAlph <= alphabeticInterval.getMiddleIndex())
+			{
+				currentNode = currentNode.getLeftChild();
+				alphabeticInterval.setRightIndex();
+			}
+			else
+			{
+				currentNode = currentNode.getRightChild();
+				alphabeticInterval.setLeftIndex();
+			}
+		}
+		
+		if (characterRepresentedWithZero) // if it's not set already
+		{
+			if (alphabeticInterval.getLeftIndex() == indexOfCharInAlph)
+				characterRepresentedWithZero = true;
+			else
+				characterRepresentedWithZero = false;
+		}
+		
+		
+		
+		// tree traversal bottom-up once we have node representing our character
+		int position = getPositionOfNthOccurrence(currentNode.getBitmap(), nthOccurrence, characterRepresentedWithZero); 
+		if (position == 0)
+		{
+			return -1; // that indicates that there is no n occurrences of character!
+		}
+		
+		Node child = currentNode;
+		currentNode = currentNode.getParent();
+		
+		while(currentNode != null)
+		{
+			if (currentNode.getLeftChild().equals(child))
+			{
+				position = getPositionOfNthOccurrence(currentNode.getBitmap(), position, true);
+			}
+			else
+			{
+				position = getPositionOfNthOccurrence(currentNode.getBitmap(), position, false);
+			}
+			
+			currentNode = currentNode.getParent();
+			child = child.getParent();
+		}
+		
+		return position;
+	}
+	
+	
+	// returns character at index
+	public char member (int index) throws Exception // index starts from 0
+	{
+		Interval alphabeticInterval = new Interval (0, alphabet.size() - 1);
+		
+		if (index > root.getBitmap().length() - 1)
+		{
+			throw new Exception("Index of range for funtion member");
+		}
+		else
+		{
+			Node currentNode = root;
+			int newIndex = index;
+			
+			while (alphabeticInterval.isGreaterThanTwo())
+			{
+				
+				if (currentNode != null) // currentNode can be set to null because we're NOT storing leafs which would have only 
+										 // 1 character and therefore, we need to store parent also.
+				{
+					index = newIndex;
+					
+					if (currentNode.getBitmap().charAt(index) == '1')
+					{
+						newIndex = rank1(currentNode.getBitmap(), index) - 1;
+						currentNode = currentNode.getRightChild();
+						alphabeticInterval.setLeftIndex();
+					}
+					else
+					{
+						newIndex = index - rank1(currentNode.getBitmap(), index); // we're counting 0s!
+						currentNode = currentNode.getLeftChild();
+						alphabeticInterval.setRightIndex();
+					}
+				}
+				else
+				{
+					break;
+				}
+			}
+			
+			if (currentNode != null)
+			{
+				// now that we're done, we need to check if it's 1 or 0
+				if (currentNode.getBitmap().charAt(newIndex) == '1') // we're taking right interval!
+				{
+					return alphabet.get(alphabeticInterval.getRightIndex());
+				}
+				else
+				{
+					return alphabet.get(alphabeticInterval.getLeftIndex());
+				}
+			}
+			else // it doesn't matter which index we use here, because both are the same
+			{
+				return alphabet.get(alphabeticInterval.getLeftIndex());
+			}
+			
+		}
+		
+	}
+	
+	
+	
+	
+	
+	// helping functions:
+	
+	// returns position of nth occurrence in bitmap of 0 of 1, depending on boolean parameter
+	public int getPositionOfNthOccurrence(String bitmap, int nthOcurrance, boolean characterRepresentedWithZero)
+	{
+		int counter = 0;
+		int position = 0; // position is index + 1
+		for (char c : bitmap.toCharArray())
+		{
+			if (counter < nthOcurrance)
+			{
+				position++;
+				
+				if (characterRepresentedWithZero && c == '0')
+					counter++;
+				else if (!characterRepresentedWithZero && c=='1')
+					counter++;
+			}
+			else
+				break;
+		}
+		
+		if (counter == nthOcurrance) // if this is not true, that means that there are no n occurances in bitmap!
+			return position;
+		else
+			return 0;
+	}
+	
+	// returns index of character in array of characters
+	public int getIndex(char c, List<Character> arrayList)
+	{
+	    for (int i = 0; i < arrayList.size(); i++)
+	    {
+	        if (c == arrayList.get(i))
+	        {
+	        	return i;
+	        }
+	    } 
+
+	    return -1;
+	}
+	
+	// returns number of 1s till some index inclusive
+	public int rank1(String bitmap, int index)
+	{
+		int counter = 0;
+		
+		for (int i=0; i < bitmap.length() && i <= index; i++)
+		{
+			if (bitmap.charAt(i) == '1')
+			{
+				counter++;
+			}
+		}
+		
+		return counter;
+	}
+	
+	// returns difference in time in ms
+	public double getMiliseconds (long endTime, long startTime)
+	{
+		return (double)(endTime - startTime) / 1000000;
+	}
+	
+	
+	// getters and setters for parameters of functions
+	public void setPosition(int position)
+	{
+		this.position = position;
+	}
+	
+	public int getPositionOfChar()
+	{
+		return this.position;
+	}
+	
+	public void setoccurrence (int occurrence)
+	{
+		this.occurrence = occurrence;
+	}
+	
+	public int getoccurrence()
+	{
+		return this.occurrence;
+	}
+	
+	public void setCharacter(char character)
+	{
+		this.character = character;
+	}
+	
+	public char getCharacter()
+	{
+		return this.character;
+	}
+	
+	
+}

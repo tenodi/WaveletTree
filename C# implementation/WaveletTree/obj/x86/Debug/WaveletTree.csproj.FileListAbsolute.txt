@@ -1,0 +1,4 @@
+C:\Users\Jura\Documents\Projects\Bioinformatika\WaveletTree\bin\Debug\WaveletTree.exe
+C:\Users\Jura\Documents\Projects\Bioinformatika\WaveletTree\bin\Debug\WaveletTree.pdb
+C:\Users\Jura\Documents\Projects\Bioinformatika\WaveletTree\obj\x86\Debug\WaveletTree.exe
+C:\Users\Jura\Documents\Projects\Bioinformatika\WaveletTree\obj\x86\Debug\WaveletTree.pdb

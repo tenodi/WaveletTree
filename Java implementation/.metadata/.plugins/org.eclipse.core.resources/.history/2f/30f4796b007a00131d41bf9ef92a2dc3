@@ -1,0 +1,10 @@
+
+public class Program {
+
+	public static void main(String args[])
+	{
+		System.out.println("Total memory taken by JVM before starting is" + Runtime.getRuntime().totalMemory());
+		new WaveletTreeConstructor("fastaFile.txt");
+	}
+	
+}

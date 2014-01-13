@@ -1,0 +1,31 @@
+
+public class Program {
+
+	public static void main(String args[])
+	{
+		
+		System.out.println("Java implementation starting...\n");
+//		System.out.println("Total memory taken by JVM before starting is " + getMb(Runtime.getRuntime().totalMemory()) + "MB\n");
+		
+		Runtime.getRuntime().gc();
+		System.out.println("EVO " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
+		System.out.println("\n\nFasta file 1:");
+		System.out.println("-------------");
+		
+		try
+		{
+			WaveletTreeConstructor wc = new WaveletTreeConstructor(args);
+//			Runtime.getRuntime().gc();
+			System.out.println("EVO " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
+		}
+		catch (Exception e)
+		{
+			System.out.println(e.getMessage());
+		}
+	}
+	
+	public static long getKb(long bytes){
+		return bytes / (1024);
+	}
+	
+}

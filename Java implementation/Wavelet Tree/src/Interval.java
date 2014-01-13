@@ -1,0 +1,67 @@
+// represents alphabetic interval which some node represents
+public class Interval {
+
+	private int leftIndex;
+	private int rightIndex;
+	
+	// initializes member variables
+	public Interval (int leftIndex, int rightIndex){
+		this.leftIndex = leftIndex;
+		this.rightIndex = rightIndex;
+	}
+
+	// checks if alphabetic interval is greater than 2, inclusive
+	public boolean isGreaterThanTwo()
+	{
+		if ((rightIndex - leftIndex) > 1) // because it's inclusive
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+			
+	}
+	
+	
+	// returns middle index for interval, making left side greater in case of odd size
+	public int getMiddleIndex()
+	{
+		return (this.leftIndex + this.rightIndex) / 2; // (check: (0+10)/2=5 ; (5+10)/2=7 ; (4+10)/7=7)
+	}
+	
+	
+	// returns how many elements interval is currently showing
+	public int getSize() 
+	{
+		return rightIndex - leftIndex + 1;
+	}
+	
+	
+	
+	// getters and setters for right and left index
+	public int getLeftIndex()
+	{
+		return leftIndex;
+	}
+	
+	public int getRightIndex()
+	{
+		return rightIndex;
+	}
+	
+	public void setLeftIndex() // always sets like this
+	{
+		this.leftIndex = rightIndex - (getSize()/2 - 1); 
+	}
+	
+	public void setRightIndex()
+	{
+		this.rightIndex = leftIndex + ((getSize() + 1) / 2 - 1); // getSize + 1 because on odd size of alphabet, left half is bigger for 1
+	}
+	
+	
+	
+	
+}

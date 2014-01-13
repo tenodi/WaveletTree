@@ -1,0 +1,15 @@
+﻿<Properties>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="WaveletTree\WaveletTree.cs">
+    <Files>
+      <File FileName="WaveletTree\Program.cs" Line="10" Column="34" />
+      <File FileName="WaveletTree\WaveletTree.cs" Line="91" Column="31" />
+      <File FileName="WaveletTree\WaveletNode.cs" Line="66" Column="1" />
+      <File FileName="WaveletTree\Interval.cs" Line="12" Column="27" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>
